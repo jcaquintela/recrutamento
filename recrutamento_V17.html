@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zome: Dashboard Interativo de Recrutamento</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+        .gradient-text {
+            background: linear-gradient(to right, #003f5c, #58508d, #bc5090);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .kpi-card {
+            background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .funnel-step {
+            position: relative;
+            padding-left: 40px;
+            padding-bottom: 2rem;
+            border-left: 3px solid #e5e7eb;
+        }
+        .funnel-step:last-child {
+            border-left: 3px solid transparent;
+            padding-bottom: 0;
+        }
+        .funnel-icon {
+            position: absolute;
+            left: -22px;
+            top: 0;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background-color: #fff;
+            border: 3px solid #e5e7eb;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 400px;
+            max-height: 500px;
+        }
+        .input-card label {
+            color: #4a5568;
+            font-weight: 600;
+        }
+        .input-card input, .input-card select {
+            border: 1px solid #cbd5e0;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            width: 100%;
+            margin-top: 0.25rem;
+        }
+        .alert-card {
+            border-left-width: 4px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <main class="container mx-auto p-4 md:p-8" id="infographic-content">
+
+        <section id="controls" class="mb-12 bg-white p-6 rounded-xl shadow-lg">
+            <h2 class="text-2xl font-bold text-center mb-6">Painel de Controlo</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="input-card">
+                    <label for="hubName">Nome do Hub</label>
+                    <select id="hubName">
+                        <option>Abóboda</option><option>Albufeira</option><option>Almada Centro</option><option>Alverca</option><option>Amadora</option><option>Aveiro</option><option>Azores</option><option>Barcelos</option><option>Braga</option><option>Braga Maximinos</option><option>Carcavelos</option><option>Cascais</option><option>Cascais Marina</option><option>Coimbra</option><option>Corroios</option><option>Évora</option><option>Fafe</option><option>Figueira da Foz</option><option>Funchal</option><option>Gondomar</option><option>Guimarães</option><option>Guimarães ASA</option><option>Laranjeiro</option><option>Leiria</option><option>Lisboa Alcântara</option><option>Lisboa Avenidas Novas</option><option>Lisboa Benfica</option><option>Lisboa Carnide</option><option>Lisboa Expo</option><option>Lisboa Lumiar</option><option>Lisboa Restelo</option><option>Lisboa Time Oriente</option><option>Maia</option><option>Matosinhos</option><option>Mem Martins</option><option>Miraflores</option><option>Odivelas</option><option>Oeiras</option><option>Portimão Marina</option><option>Porto - CEC</option><option>Porto - Damião de Góis</option><option>Porto Boavista</option><option>Póvoa de Varzim</option><option>Santa Maria da Feira</option><option>Sesimbra</option><option>Setúbal</option><option>Viana do Castelo</option><option>Vila Nova de Famalicão</option><option>Vila Nova de Famalicão EMAC</option><option>Vila Nova de Gaia</option><option>Viseu</option>
+                    </select>
+                </div>
+                <div class="input-card">
+                    <label for="monthSelect">Mês do Ano</label>
+                    <select id="monthSelect"></select>
+                </div>
+                 <div class="input-card">
+                    <label for="entryDate">Data de Registo</label>
+                    <input type="date" id="entryDate">
+                </div>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div>
+                    <h3 class="font-bold text-lg mb-2">Definir Alvos</h3>
+                    <div class="space-y-4">
+                        <div class="input-card"><label for="targetLeads">Leads Geradas (Semanal)</label><input type="number" id="targetLeads" value="10"></div>
+                        <div class="input-card"><label for="targetMeetings">Reuniões Realizadas (Semanal)</label><input type="number" id="targetMeetings" value="3"></div>
+                        <div class="input-card"><label for="targetSignups">Inscrições Azimute (Mensal)</label><input type="number" id="targetSignups" value="1"></div>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-2">Acumulado ao Mês</h3>
+                    <div class="space-y-4">
+                        <div class="input-card"><label for="funnelLeads">Leads Geradas</label><input type="number" id="funnelLeads" value="10"></div>
+                        <div class="input-card"><label for="funnelContacts">Contactadas</label><input type="number" id="funnelContacts" value="8"></div>
+                        <div class="input-card"><label for="funnelScheduled">Agendadas</label><input type="number" id="funnelScheduled" value="5"></div>
+                        <div class="input-card"><label for="funnelHeld">Realizadas</label><input type="number" id="funnelHeld" value="4"></div>
+                        <div class="input-card"><label for="funnelSignups">Inscrições Azimute</label><input type="number" id="funnelSignups" value="1"></div>
+                        <div class="input-card"><label for="funnelNurturing">Leads em Nutrição</label><input type="number" id="funnelNurturing" value="3"></div>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-2">Mês Anterior (Total)</h3>
+                    <div class="space-y-4">
+                        <div class="input-card"><label for="funnelLeadsPrev">Leads Geradas</label><input type="number" id="funnelLeadsPrev" value="8"></div>
+                        <div class="input-card"><label for="funnelContactsPrev">Contactadas</label><input type="number" id="funnelContactsPrev" value="7"></div>
+                        <div class="input-card"><label for="funnelScheduledPrev">Agendadas</label><input type="number" id="funnelScheduledPrev" value="4"></div>
+                        <div class="input-card"><label for="funnelHeldPrev">Realizadas</label><input type="number" id="funnelHeldPrev" value="3"></div>
+                        <div class="input-card"><label for="funnelSignupsPrev">Inscrições Azimute</label><input type="number" id="funnelSignupsPrev" value="0"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="vision" class="text-center py-12 md:py-16">
+            <img src="https://zome.pt/pt/logo-zome.svg" alt="Logótipo Zome" class="h-16 mx-auto mb-6" onerror="this.style.display='none'">
+            <h1 class="text-4xl md:text-5xl font-black mb-4 uppercase tracking-wider">Recrutamento de Alta Performance</h1>
+            <p class="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">O teu foco constrói o futuro. Um guia visual para escalar o teu Hub com previsibilidade e consistência.</p>
+        </section>
+
+        <section id="kpis" class="py-12">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold mb-2">Os Teus Alvos</h2>
+                <p class="text-md text-gray-500">Estes são os teus indicadores mínimos para garantir o crescimento.</p>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-white rounded-xl shadow-lg p-6 text-center kpi-card">
+                    <p class="text-6xl font-extrabold text-[#003f5c]" id="displayTargetLeads">10+</p>
+                    <p class="text-gray-700 font-semibold mt-2">Leads Geradas (Semanal)</p>
+                    <p class="text-sm text-gray-500">O motor do teu funil.</p>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg p-6 text-center kpi-card">
+                    <p class="text-6xl font-extrabold text-[#58508d]" id="displayTargetMeetings">3+</p>
+                    <p class="text-gray-700 font-semibold mt-2">Reuniões Realizadas (Semanal)</p>
+                    <p class="text-sm text-gray-500">Onde a magia acontece.</p>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg p-6 text-center kpi-card">
+                    <p class="text-6xl font-extrabold text-[#bc5090]" id="displayTargetSignups">1+</p>
+                    <p class="text-gray-700 font-semibold mt-2">Inscrições Azimute (Mensal)</p>
+                    <p class="text-sm text-gray-500">O teu resultado mensal.</p>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg p-6 text-center kpi-card">
+                    <p class="text-6xl font-extrabold text-[#ff6361]">100%</p>
+                    <p class="text-gray-700 font-semibold mt-2">Registo na ZAP</p>
+                    <p class="text-sm text-gray-500">Não negociável.</p>
+                </div>
+            </div>
+        </section>
+        
+        <section id="funnel" class="py-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold mb-2">A Jornada do Talento: O Funil Zome</h2>
+                <p class="text-md text-gray-500">Cada etapa tem um objetivo claro. A tua consistência garante a conversão.</p>
+            </div>
+            
+            <div class="max-w-3xl mx-auto bg-white rounded-lg shadow-md p-8 mb-12">
+                <div class="relative">
+                    <div class="funnel-step"><div class="funnel-icon bg-blue-100 border-blue-300"><span class="text-xl">📢</span></div><h3 class="text-xl font-bold text-[#003f5c]">1. Geração de Leads</h3><p class="text-gray-600 mt-1">Criar um fluxo constante de potenciais candidatos a partir do teu CIP, MGM, Aliados e canais digitais.</p><p class="font-bold mt-2 text-sm text-blue-600">Meta: 10+ leads/semana</p></div>
+                    <div class="funnel-step"><div class="funnel-icon bg-purple-100 border-purple-300"><span class="text-xl">📞</span></div><h3 class="text-xl font-bold text-[#58508d]">2. Contacto & Marcação</h3><p class="text-gray-600 mt-1">Estabelecer ligação, filtrar interesse e agendar uma reunião presencial no Hub para gerar compromisso.</p><p class="font-bold mt-2 text-sm text-purple-600">Meta: ≥60% das leads agendam</p></div>
+                    <div class="funnel-step"><div class="funnel-icon bg-pink-100 border-pink-300"><span class="text-xl">🤝</span></div><h3 class="text-xl font-bold text-[#bc5090]">3. Reunião & Nutrição</h3><p class="text-gray-600 mt-1">Apresentar a proposta de valor, conectar com o candidato e manter o seguimento ativo até à decisão.</p><p class="font-bold mt-2 text-sm text-pink-600">Meta: ≥80% de comparência</p></div>
+                    <div class="funnel-step"><div class="funnel-icon bg-green-100 border-green-300"><span class="text-xl">🚀</span></div><h3 class="text-xl font-bold text-green-600">4. Inscrição & Azimute Zero</h3><p class="text-gray-600 mt-1">Converter interesse em compromisso formal e garantir uma experiência de onboarding de excelência.</p><p class="font-bold mt-2 text-sm text-green-700">Meta: 100% de presença</p></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-bold text-center mb-4">Visualização da Conversão do Funil</h3>
+                    <p class="text-center text-gray-500 text-sm mb-4">Introduza os seus dados reais no painel de controlo para ver a sua conversão.</p>
+                    <div class="chart-container"><canvas id="funnelChart"></canvas></div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-bold text-center mb-4">Análise de Conversão (%)</h3>
+                    <div id="conversion-rates" class="space-y-4"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="corrective-actions" class="py-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold mb-2">Plano de Ação para o Mês</h2>
+                <p class="text-md text-gray-500">Sugestões automáticas com base nos seus KPIs e no manual de recrutamento.</p>
+            </div>
+            <div id="actions-container" class="space-y-6"></div>
+        </section>
+        
+        <section id="competicao" class="py-16">
+            <div class="text-center mb-12">
+                <h3 class="text-3xl font-bold mb-2">O Campo de Batalha pelo Talento</h3>
+                <p class="text-md text-gray-500 max-w-2xl mx-auto">Cada concorrente tem uma proposta de valor distinta. Conhecer o terreno é essencial para posicionar a Zome como a escolha superior.</p>
+            </div>
+            <div class="bg-white rounded-lg shadow-md p-6">
+                 <div class="chart-container h-[400px] md:h-[500px]"><canvas id="competitorRadarChart"></canvas></div>
+                <p class="text-center text-gray-500 mt-4 text-sm">Análise comparativa das propostas de valor dos principais concorrentes.</p>
+            </div>
+        </section>
+
+        <section id="adn" class="py-16">
+            <div class="text-center mb-12">
+                <h3 class="text-3xl font-bold mb-2">O ADN do Consultor Vencedor</h3>
+                <p class="text-md text-gray-500 max-w-2xl mx-auto">Recrutamos com base em motivações, mentalidade e competências, segmentando a nossa abordagem para cada perfil.</p>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h4 class="text-xl font-bold text-center mb-4">Motivações vs. Frustrações</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div><div class="chart-container h-[250px] max-h-[250px]"><canvas id="motivationsDonutChart"></canvas></div><p class="text-center font-semibold text-green-600 mt-2">O que os Atrai</p></div>
+                        <div><div class="chart-container h-[250px] max-h-[250px]"><canvas id="frustrationsDonutChart"></canvas></div><p class="text-center font-semibold text-red-600 mt-2">O que os Afasta</p></div>
+                    </div>
+                     <p class="text-center text-gray-500 mt-4 text-sm">A nossa proposta de valor deve maximizar os motivadores e ser o antídoto para as frustrações comuns.</p>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6 h-full">
+                    <h4 class="text-xl font-bold text-center mb-6">Segmentação Estratégica de Candidatos</h4>
+                    <div class="space-y-6">
+                        <div class="flex items-start space-x-4"><span class="text-4xl">🚀</span><div><h5 class="font-bold text-[#003f5c]">O Iniciante</h5><p class="text-gray-600">Precisa de formação, mentoria e um sistema comprovado.</p></div></div>
+                        <div class="flex items-start space-x-4"><span class="text-4xl">💼</span><div><h5 class="font-bold text-[#7a5195]">O Especialista</h5><p class="text-gray-600">Procura melhores comissões, tecnologia e crescimento.</p></div></div>
+                        <div class="flex items-start space-x-4"><span class="text-4xl">📈</span><div><h5 class="font-bold text-[#ef5675]">O Profissional de Carreira</h5><p class="text-gray-600">Atrai-se por cultura de excelência e progressão clara.</p></div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="calendar" class="py-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold mb-2">O Calendário do HD de Sucesso</h2>
+                <p class="text-md text-gray-500">O recrutamento não é opcional, é uma rotina. Estes blocos são não-negociáveis.</p>
+            </div>
+            <div class="bg-white rounded-lg shadow-lg p-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+                    <div class="border-l-4 border-[#ff6361] pl-4">
+                        <h4 class="font-bold text-lg">Prospeção Ativa</h4>
+                        <p class="text-gray-600">Diariamente, 30-45 min</p>
+                        <p class="text-sm text-gray-500 mt-1">Ativar CIP, aliados e canais digitais para gerar novas leads.</p>
+                    </div>
+                    <div class="border-l-4 border-[#ffa600] pl-4">
+                        <h4 class="font-bold text-lg">Reuniões de Pitch</h4>
+                        <p class="text-gray-600">3 a 5 por semana</p>
+                        <p class="text-sm text-gray-500 mt-1">Converter leads qualificadas em futuros consultores.</p>
+                    </div>
+                    <div class="border-l-4 border-[#58508d] pl-4">
+                        <h4 class="font-bold text-lg">Seguimento & Nutrição</h4>
+                        <p class="text-gray-600">2x por semana</p>
+                        <p class="text-sm text-gray-500 mt-1">Manter o pipeline ativo e reativar interessados.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-800 text-white text-center p-6 mt-8">
+        <img src="https://zome.pt/pt/logo-zome.svg" alt="Logótipo Zome" class="h-8 mx-auto mb-4 filter invert" onerror="this.style.display='none'">
+        <p class="text-sm opacity-75">&copy; 2025 Zome. A tua disciplina cria o teu sucesso.</p>
+    </footer>
+
+    <div class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2">
+        <button id="downloadPdfBtn" class="bg-[#bc5090] text-white py-3 px-5 rounded-full shadow-lg hover:bg-[#a64781] transition-colors flex items-center space-x-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M4 2a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2H4zm6 10a1 1 0 100-2 1 1 0 000 2z"/><path fill-rule="evenodd" d="M8 6a2 2 0 100 4 2 2 0 000-4zM4.5 12a.5.5 0 01.5-.5h10a.5.5 0 010 1H5a.5.5 0 01-.5-.5z" clip-rule="evenodd"/></svg>
+            <span id="downloadPdfBtnText">PDF</span>
+        </button>
+        <button id="downloadCsvBtn" class="bg-blue-600 text-white py-3 px-5 rounded-full shadow-lg hover:bg-blue-700 transition-colors flex items-center space-x-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 9.293a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+            <span>CSV</span>
+        </button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const monthSelect = document.getElementById('monthSelect');
+            const months = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+            const currentMonth = new Date().getMonth();
+            months.forEach((month, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.innerText = month;
+                if (index === currentMonth) {
+                    option.selected = true;
+                }
+                monthSelect.appendChild(option);
+            });
+            
+            document.getElementById('entryDate').valueAsDate = new Date();
+
+            const ZOME_COLORS = { dark_blue: '#003f5c', purple: '#7a5195', magenta: '#bc5090', pink: '#ef5675', orange: '#ff764a', yellow: '#ffa600' };
+
+            // Static Charts
+            new Chart(document.getElementById('competitorRadarChart'), { type: 'radar', data: { labels: ['Comissões', 'Tecnologia', 'Formação', 'Marca', 'Cultura'], datasets: [ { label: 'RE/MAX', data: [3, 3, 4, 5, 4], borderColor: ZOME_COLORS.dark_blue, backgroundColor: 'rgba(0, 63, 92, 0.2)' }, { label: 'Century 21', data: [3, 4, 5, 4, 3], borderColor: ZOME_COLORS.purple, backgroundColor: 'rgba(122, 81, 149, 0.2)' }, { label: 'KW', data: [5, 4, 5, 3, 5], borderColor: ZOME_COLORS.magenta, backgroundColor: 'rgba(188, 80, 144, 0.2)' }, { label: 'iad', data: [4, 4, 3, 2, 4], borderColor: ZOME_COLORS.pink, backgroundColor: 'rgba(239, 86, 117, 0.2)' }, { label: 'eXp', data: [5, 5, 4, 2, 4], borderColor: ZOME_COLORS.orange, backgroundColor: 'rgba(255, 118, 74, 0.2)' } ] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { r: { suggestedMin: 0, suggestedMax: 5, ticks: { stepSize: 1 } } } } });
+            new Chart(document.getElementById('motivationsDonutChart'), { type: 'doughnut', data: { labels: ['Autonomia', 'Ganhos', 'Flexibilidade', 'Ajudar Clientes'], datasets: [{ data: [40, 30, 20, 10], backgroundColor: [ZOME_COLORS.dark_blue, ZOME_COLORS.purple, ZOME_COLORS.magenta, ZOME_COLORS.pink], borderColor: '#fff', borderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+            new Chart(document.getElementById('frustrationsDonutChart'), { type: 'doughnut', data: { labels: ['Falta de Reconhecimento', 'Frustração', 'Falta de Apoio', 'Rendimento Instável'], datasets: [{ data: [35, 25, 25, 15], backgroundColor: ['#ff6384', '#ff9f40', '#ffcd56', '#c9cbcf'], borderColor: '#fff', borderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+
+            // Dynamic Charts
+            const funnelChart = new Chart(document.getElementById('funnelChart'), { type: 'bar', data: { labels: ['Leads Geradas', 'Contactadas', 'Agendadas', 'Realizadas', 'Inscrições Azimute'], datasets: [{ label: 'Nº de Candidatos', data: [], backgroundColor: ['rgba(0, 63, 92, 0.7)', 'rgba(88, 80, 141, 0.7)', 'rgba(188, 80, 144, 0.7)', 'rgba(255, 99, 97, 0.7)', 'rgba(255, 166, 0, 0.7)'], borderColor: ['#003f5c', '#58508d', '#bc5090', '#ff6361', '#ffa600'], borderWidth: 2 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { display: false } }, y: { grid: { display: false } } } } });
+            
+            const kpiTargets = { contactRate: 80, schedulingRate: 60, showUpRate: 80, closingRate: 30 };
+            const correctiveActions = { leads: "Ativar 10 contactos do CIP em 48h, atualizar anúncios e segmentação, e bloquear 2h para ações diretas (LinkedIn, etc.).", contactRate: "Rever horários e canais de contacto, usar voicemails/áudios.", schedulingRate: "Melhorar pitch inicial. Criar urgência e curiosidade. Agilizar agendamento.", showUpRate: "Confirmar presença 24h antes. Reforçar valor da reunião. Usar provas sociais.", closingRate: "Reforçar o fecho, trabalhar objeções com Gestor de Operações. Usar prova social e escassez." };
+
+            function getTrendIndicator(current, previous) {
+                if (current > previous) return `<span class="text-green-500 font-bold ml-2">↑</span>`;
+                if (current < previous) return `<span class="text-red-500 font-bold ml-2">↓</span>`;
+                return `<span class="text-gray-500 font-bold ml-2">→</span>`;
+            }
+
+            function updateDashboard() {
+                document.getElementById('displayTargetLeads').innerText = document.getElementById('targetLeads').value + '+';
+                document.getElementById('displayTargetMeetings').innerText = document.getElementById('targetMeetings').value + '+';
+                document.getElementById('displayTargetSignups').innerText = document.getElementById('targetSignups').value + '+';
+
+                const funnelData = {
+                    leads: parseInt(document.getElementById('funnelLeads').value) || 0,
+                    contacts: parseInt(document.getElementById('funnelContacts').value) || 0,
+                    scheduled: parseInt(document.getElementById('funnelScheduled').value) || 0,
+                    held: parseInt(document.getElementById('funnelHeld').value) || 0,
+                    signups: parseInt(document.getElementById('funnelSignups').value) || 0
+                };
+                
+                const funnelDataPrev = {
+                    leads: parseInt(document.getElementById('funnelLeadsPrev').value) || 0,
+                    contacts: parseInt(document.getElementById('funnelContactsPrev').value) || 0,
+                    scheduled: parseInt(document.getElementById('funnelScheduledPrev').value) || 0,
+                    held: parseInt(document.getElementById('funnelHeldPrev').value) || 0,
+                    signups: parseInt(document.getElementById('funnelSignupsPrev').value) || 0
+                };
+
+                funnelChart.data.datasets[0].data = Object.values(funnelData);
+                funnelChart.update();
+                
+                const rates = {
+                    contactRate: funnelData.leads > 0 ? (funnelData.contacts / funnelData.leads) * 100 : 0,
+                    schedulingRate: funnelData.contacts > 0 ? (funnelData.scheduled / funnelData.contacts) * 100 : 0,
+                    showUpRate: funnelData.scheduled > 0 ? (funnelData.held / funnelData.scheduled) * 100 : 0,
+                    closingRate: funnelData.held > 0 ? (funnelData.signups / funnelData.held) * 100 : 0
+                };
+                
+                const ratesPrev = {
+                    contactRate: funnelDataPrev.leads > 0 ? (funnelDataPrev.contacts / funnelDataPrev.leads) * 100 : 0,
+                    schedulingRate: funnelDataPrev.contacts > 0 ? (funnelDataPrev.scheduled / funnelDataPrev.contacts) * 100 : 0,
+                    showUpRate: funnelDataPrev.scheduled > 0 ? (funnelDataPrev.held / funnelDataPrev.scheduled) * 100 : 0,
+                    closingRate: funnelDataPrev.held > 0 ? (funnelDataPrev.signups / funnelDataPrev.held) * 100 : 0
+                };
+
+                const conversionContainer = document.getElementById('conversion-rates');
+                conversionContainer.innerHTML = `
+                    <p><strong>Leads → Contactadas:</strong> ${rates.contactRate.toFixed(1)}% ${getTrendIndicator(rates.contactRate, ratesPrev.contactRate)}</p>
+                    <p><strong>Contactadas → Agendadas:</strong> ${rates.schedulingRate.toFixed(1)}% ${getTrendIndicator(rates.schedulingRate, ratesPrev.schedulingRate)}</p>
+                    <p><strong>Agendadas → Realizadas:</strong> ${rates.showUpRate.toFixed(1)}% ${getTrendIndicator(rates.showUpRate, ratesPrev.showUpRate)}</p>
+                    <p><strong>Realizadas → Inscrições:</strong> ${rates.closingRate.toFixed(1)}% ${getTrendIndicator(rates.closingRate, ratesPrev.closingRate)}</p>
+                `;
+
+                const actionsContainer = document.getElementById('actions-container');
+                actionsContainer.innerHTML = '';
+
+                const entryDate = new Date(document.getElementById('entryDate').value);
+                const dayOfMonth = entryDate.getDate();
+                const weeksPassed = Math.max(1, Math.ceil(dayOfMonth / 7));
+
+                const weeklyAverageLeads = funnelData.leads / weeksPassed;
+                const weeklyAverageMeetings = funnelData.held / weeksPassed;
+                
+                const kpis = {
+                    leads: { current: weeklyAverageLeads, target: parseInt(document.getElementById('targetLeads').value) || 0, action: correctiveActions.leads },
+                    meetings: { current: weeklyAverageMeetings, target: parseInt(document.getElementById('targetMeetings').value) || 0, action: correctiveActions.showUpRate },
+                    signups: { current: funnelData.signups, target: parseInt(document.getElementById('targetSignups').value) || 0, action: correctiveActions.closingRate },
+                    contactRate: { current: rates.contactRate, target: kpiTargets.contactRate, action: correctiveActions.contactRate },
+                    schedulingRate: { current: rates.schedulingRate, target: kpiTargets.schedulingRate, action: correctiveActions.schedulingRate },
+                    showUpRate: { current: rates.showUpRate, target: kpiTargets.showUpRate, action: correctiveActions.showUpRate },
+                    closingRate: { current: rates.closingRate, target: kpiTargets.closingRate, action: correctiveActions.closingRate }
+                };
+
+                const stage1 = { title: "📢 Etapa 1: Geração & Contacto", kpis: { 'Média Semanal de Leads': kpis.leads, 'Taxa de Contacto': kpis.contactRate } };
+                const stage2 = { title: "📞 Etapa 2: Marcação & Realização", kpis: { 'Taxa de Agendamento': kpis.schedulingRate, 'Taxa de Comparência': kpis.showUpRate, 'Média Semanal de Reuniões': kpis.meetings } };
+                const stage3 = { title: "🚀 Etapa 3: Inscrição", kpis: { 'Taxa de Inscrição (Fecho)': kpis.closingRate, 'Inscrições Mensais': kpis.signups } };
+
+                [stage1, stage2, stage3].forEach(stage => {
+                    let stageHasIssues = false;
+                    let listItems = '';
+                    let actions = new Set();
+
+                    for (const [name, kpi] of Object.entries(stage.kpis)) {
+                        const isSuccess = kpi.current >= kpi.target;
+                        listItems += `<li>${name}: <span class="font-bold">${isSuccess ? 'OK' : 'Abaixo do Alvo'}</span></li>`;
+                        if (!isSuccess) {
+                            stageHasIssues = true;
+                            actions.add(kpi.action);
+                        }
+                    }
+
+                    if (stageHasIssues) {
+                        listItems += `<li class="mt-2 text-red-800"><strong>Ação Corretiva:</strong> ${Array.from(actions).join(' ')}</li>`;
+                    }
+                    
+                    const bgColor = stageHasIssues ? 'bg-red-100' : 'bg-green-100';
+                    const borderColor = stageHasIssues ? 'border-red-500' : 'border-green-500';
+                    const textColor = stageHasIssues ? 'text-red-700' : 'text-green-700';
+
+                    actionsContainer.innerHTML += `
+                        <div class="p-4 rounded-lg alert-card ${bgColor} ${borderColor} ${textColor}">
+                            <h4 class="font-bold text-lg mb-2">${stage.title}</h4>
+                            <ul class="list-disc list-inside space-y-1">${listItems}</ul>
+                        </div>
+                    `;
+                });
+            }
+
+            document.getElementById('controls').addEventListener('input', updateDashboard);
+            updateDashboard();
+
+            document.getElementById('downloadPdfBtn').addEventListener('click', function() {
+                const downloadBtn = this; const downloadBtnText = document.getElementById('downloadPdfBtnText'); const originalText = downloadBtnText.innerText;
+                downloadBtnText.innerText = 'A gerar...'; downloadBtn.disabled = true;
+                const content = document.getElementById('infographic-content'); const buttonContainer = downloadBtn.parentElement;
+                buttonContainer.style.display = 'none';
+
+                html2canvas(content, { scale: 2, useCORS: true, logging: false }).then(canvas => {
+                    buttonContainer.style.display = 'flex';
+                    const imgData = canvas.toDataURL('image/png'); const { jsPDF } = window.jspdf;
+                    const canvasWidth = canvas.width; const canvasHeight = canvas.height;
+                    const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: [canvasWidth, canvasHeight] });
+                    pdf.addImage(imgData, 'PNG', 0, 0, canvasWidth, canvasHeight);
+                    
+                    const hubNameSelect = document.getElementById('hubName'); const hubName = hubNameSelect.options[hubNameSelect.selectedIndex].text.replace(/ /g, '_');
+                    const monthName = monthSelect.options[monthSelect.selectedIndex].text;
+                    const date = new Date(); const dateStr = `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getFullYear()}`;
+                    pdf.save(`Infografia-Zome-${hubName}-${monthName}-${dateStr}.pdf`);
+                    downloadBtnText.innerText = originalText; downloadBtn.disabled = false;
+                }).catch(err => {
+                    buttonContainer.style.display = 'flex'; console.error("Erro ao gerar PDF:", err); downloadBtnText.innerText = "Erro";
+                    setTimeout(() => { downloadBtnText.innerText = originalText; downloadBtn.disabled = false; }, 3000);
+                });
+            });
+
+            document.getElementById('downloadCsvBtn').addEventListener('click', function() {
+                const hubNameSelect = document.getElementById('hubName');
+                const hubName = hubNameSelect.options[hubNameSelect.selectedIndex].text;
+                const monthName = monthSelect.options[monthSelect.selectedIndex].text;
+                const entryDate = document.getElementById('entryDate').value;
+
+                const headers = ["Categoria", "Leads Geradas", "Contactadas", "Agendadas", "Realizadas", "Inscrições Azimute", "Leads em Nutrição"];
+                const data = [
+                    ["Alvo Semanal", document.getElementById('targetLeads').value, "N/A", "N/A", document.getElementById('targetMeetings').value, "N/A", "N/A"],
+                    ["Alvo Mensal", "N/A", "N/A", "N/A", "N/A", document.getElementById('targetSignups').value, "N/A"],
+                    ["Mês Atual Acumulado", document.getElementById('funnelLeads').value, document.getElementById('funnelContacts').value, document.getElementById('funnelScheduled').value, document.getElementById('funnelHeld').value, document.getElementById('funnelSignups').value, document.getElementById('funnelNurturing').value],
+                    ["Mês Anterior Total", document.getElementById('funnelLeadsPrev').value, document.getElementById('funnelContactsPrev').value, document.getElementById('funnelScheduledPrev').value, document.getElementById('funnelHeldPrev').value, document.getElementById('funnelSignupsPrev').value, "N/A"]
+                ];
+
+                let csvContent = "data:text/csv;charset=utf-8,";
+                csvContent += `Hub;${hubName}\n`;
+                csvContent += `Mês;${monthName}\n`;
+                csvContent += `Data de Registo;${entryDate}\n\n`;
+                
+                csvContent += headers.join(";") + "\n";
+                data.forEach(rowArray => {
+                    let row = rowArray.join(";");
+                    csvContent += row + "\n";
+                });
+
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                const fileName = `Dados-Zome-${hubName.replace(/ /g, '_')}-${monthName}-${entryDate}.csv`;
+                link.setAttribute("download", fileName);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+        });
+    </script>
+</body>
+</html>
