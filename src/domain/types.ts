@@ -18,6 +18,20 @@ export type PipelineStage = (typeof PIPELINE_STAGES)[number];
 export type Source = (typeof SOURCES)[number];
 export type Score = (typeof SCORES)[number];
 
+export interface Interaction {
+  id: string;
+  date: string;
+  type: 'Chamada' | 'Email' | 'Entrevista' | 'Nota';
+  note: string;
+}
+
+export interface Task {
+  id: string;
+  title: string;
+  dueDate: string;
+  done: boolean;
+}
+
 export interface Candidate {
   id: string;
   nome: string;
@@ -32,6 +46,8 @@ export interface Candidate {
   ultimoContacto: string;
   proximaAcao: string;
   notas: string;
+  interactions: Interaction[];
+  tasks: Task[];
 }
 
 export interface CandidateFilters {
