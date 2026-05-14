@@ -16,6 +16,8 @@ export function CandidateDetail({ candidate, onAddInteraction, onToggleTask, onA
       <p className="text-sm text-slate-600">{candidate.nome} · {candidate.email} · {candidate.telefone}</p>
       <p className="mt-2 text-sm">Último contacto: <span className="font-medium">{candidate.ultimoContacto}</span></p>
       <p className="text-sm">Próxima ação: {candidate.proximaAcao}</p>
+      <p className="mt-2 text-sm">Score atual: <span className="font-semibold">{candidate.score}</span></p>
+      <p className="text-sm text-slate-700">{candidate.scoreJustification}</p>
       <p className="mt-2 text-sm">Notas: {candidate.notas}</p>
 
       <div className="mt-4 grid gap-4 md:grid-cols-2">

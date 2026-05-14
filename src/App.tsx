@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Dashboard } from './features/dashboard/Dashboard';
 import { mockCandidates } from './mocks/candidates';
 import type { Candidate, CandidateFilters, Interaction, PipelineStage } from './domain/types';
+import { calculateScore } from './domain/scoring';
 import { CandidateFilters as Filters } from './features/candidates/CandidateFilters';
 import { CandidatesTable } from './features/candidates/CandidatesTable';
 import { KanbanBoard } from './features/kanban/KanbanBoard';
@@ -11,7 +12,7 @@ import { CandidateForm } from './features/candidates/CandidateForm';
 const initialFilters: CandidateFilters = { query: '', etapa: 'Todos', fonte: 'Todos', score: 'Todos', owner: 'Todos', hub: 'Todos' };
 
 const emptyCandidate: Omit<Candidate, 'interactions' | 'tasks'> = {
-  id: '', nome: '', telefone: '', email: '', fonte: 'Digital', hubPretendido: '', owner: '', etapa: 'Nova lead', score: 'Bronze', dataEntradaLead: new Date().toISOString().slice(0, 10), ultimoContacto: new Date().toISOString().slice(0, 10), proximaAcao: '', notas: ''
+  id: '', nome: '', telefone: '', email: '', fonte: 'Digital', hubPretendido: '', owner: '', etapa: 'Nova lead', score: 'Bronze', scoreJustification: '', profile: { experienciaComercial: 3, motivacao: 3, disponibilidade: 3, urgencia: 3, investimentoInicial: 3, qualidadeResposta: 3, aberturaEntrevista: 3 }, dataEntradaLead: new Date().toISOString().slice(0, 10), ultimoContacto: new Date().toISOString().slice(0, 10), proximaAcao: '', notas: ''
 };
 
 function App() {
@@ -39,10 +40,11 @@ function App() {
 
   const saveCandidate = () => {
     if (!editing) return;
-    if (editing.id) setCandidates((prev) => prev.map((c) => c.id === editing.id ? { ...c, ...editing } : c));
+    const scoring = calculateScore(editing.profile);
+    if (editing.id) setCandidates((prev) => prev.map((c) => c.id === editing.id ? { ...c, ...editing, ...scoring } : c));
     else {
       const id = `cand-${Math.random().toString(36).slice(2, 7)}`;
-      setCandidates((prev) => [{ ...editing, id, interactions: [], tasks: [] }, ...prev]);
+      setCandidates((prev) => [{ ...editing, ...scoring, id, interactions: [], tasks: [] }, ...prev]);
       setSelectedId(id);
     }
     setEditing(null);

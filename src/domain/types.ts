@@ -18,6 +18,16 @@ export type PipelineStage = (typeof PIPELINE_STAGES)[number];
 export type Source = (typeof SOURCES)[number];
 export type Score = (typeof SCORES)[number];
 
+export interface CandidateProfileAnswers {
+  experienciaComercial: number;
+  motivacao: number;
+  disponibilidade: number;
+  urgencia: number;
+  investimentoInicial: number;
+  qualidadeResposta: number;
+  aberturaEntrevista: number;
+}
+
 export interface Interaction {
   id: string;
   date: string;
@@ -42,6 +52,8 @@ export interface Candidate {
   owner: string;
   etapa: PipelineStage;
   score: Score;
+  scoreJustification: string;
+  profile: CandidateProfileAnswers;
   dataEntradaLead: string;
   ultimoContacto: string;
   proximaAcao: string;

@@ -1,5 +1,5 @@
-import { PIPELINE_STAGES, SCORES, SOURCES } from '../../domain/types';
-import type { Candidate } from '../../domain/types';
+import { PIPELINE_STAGES, SOURCES } from '../../domain/types';
+import type { Candidate, CandidateProfileAnswers } from '../../domain/types';
 
 type CandidateInput = Omit<Candidate, 'interactions' | 'tasks'>;
 
@@ -9,6 +9,16 @@ interface Props {
   onSave: () => void;
   onCancel: () => void;
 }
+
+const profileFields: { key: keyof CandidateProfileAnswers; label: string }[] = [
+  { key: 'experienciaComercial', label: 'Experiência comercial' },
+  { key: 'motivacao', label: 'Motivação para imobiliário' },
+  { key: 'disponibilidade', label: 'Disponibilidade' },
+  { key: 'urgencia', label: 'Urgência' },
+  { key: 'investimentoInicial', label: 'Investimento inicial' },
+  { key: 'qualidadeResposta', label: 'Qualidade da resposta' },
+  { key: 'aberturaEntrevista', label: 'Abertura para entrevista' }
+];
 
 export function CandidateForm({ value, onChange, onSave, onCancel }: Props) {
   return (
@@ -21,9 +31,14 @@ export function CandidateForm({ value, onChange, onSave, onCancel }: Props) {
         ))}
         <select className="field" value={value.fonte} onChange={(e) => onChange({ ...value, fonte: e.target.value as Candidate['fonte'] })}>{SOURCES.map((s) => <option key={s}>{s}</option>)}</select>
         <select className="field" value={value.etapa} onChange={(e) => onChange({ ...value, etapa: e.target.value as Candidate['etapa'] })}>{PIPELINE_STAGES.map((s) => <option key={s}>{s}</option>)}</select>
-        <select className="field" value={value.score} onChange={(e) => onChange({ ...value, score: e.target.value as Candidate['score'] })}>{SCORES.map((s) => <option key={s}>{s}</option>)}</select>
         <input className="field" type="date" value={value.dataEntradaLead} onChange={(e) => onChange({ ...value, dataEntradaLead: e.target.value })} />
         <input className="field" type="date" value={value.ultimoContacto} onChange={(e) => onChange({ ...value, ultimoContacto: e.target.value })} />
+        {profileFields.map(({ key, label }) => (
+          <label key={key} className="text-sm">{label}
+            <input className="field mt-1" type="range" min={1} max={5} value={value.profile[key]} onChange={(e) => onChange({ ...value, profile: { ...value.profile, [key]: Number(e.target.value) } })} />
+            <span className="text-xs text-slate-500">{value.profile[key]}/5</span>
+          </label>
+        ))}
         <textarea className="field md:col-span-2" placeholder="notas" value={value.notas} onChange={(e) => onChange({ ...value, notas: e.target.value })} />
       </div>
       <div className="mt-3 flex gap-2">
